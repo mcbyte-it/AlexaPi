@@ -1,27 +1,47 @@
 #! /bin/bash
 
-exec > /var/log/alexa.log 2>&1 
-case "$1" in
+ALEXA_ROOT="/root/AlexaPi"
 
-start)
+start() {
     echo "Starting Alexa..."
-    python /root/AlexaPi/main.py &
+    exec > /var/log/alexa.log 2>&1
+    python "$ALEXA_ROOT/main.py" &
+}
 
-;;
-
-stop)
+stop() {
     echo "Stopping Alexa.."
-    pkill -SIGINT ^main.py$
-;;
+    pkill -f "AlexaPi/main.py"
+}
 
-restart|force-reload)
-        echo "Restarting Alexa.."
-        $0 stop
-        sleep 2
-        $0 start
-        echo "Restarted."
-;;
-*)
-        echo "Usage: $0 {start|stop|restart}"
-        exit 1
+status() {
+    pid=`pgrep -f "AlexaPi/main.py"`
+    if [ -z "$pid" ]; then
+      echo "AlexaPi is not running."
+    else
+      echo "AlexaPi is running (pid $pid)"
+    fi
+}
+
+case "$1" in
+  start)
+      start
+      ;;
+  stop)
+      stop
+      ;;
+  status)
+      status
+      ;;
+  restart|force-reload)
+      echo "Restarting Alexa.."
+      stop
+      sleep 2
+      start
+      echo "Restarted."
+      ;;
+  *)
+      echo "Usage: $0 {start|stop|restart|status}"
+      exit 1
 esac
+
+exit 0
